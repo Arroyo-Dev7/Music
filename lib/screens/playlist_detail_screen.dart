@@ -151,6 +151,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                 SliverSongList(
                   songs: songs,
                   services: services,
+                  scope: 'playlist:${playlist.id}',
                   onRemove: (song) =>
                       services.playlists.removeSong(playlist.id, song.id),
                 ),

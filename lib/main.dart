@@ -9,6 +9,12 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Caché de imágenes decodificadas: las carátulas ya vienen reducidas desde
+  // Android, así que 48 MB / 400 imágenes sobran y protegen la RAM del móvil.
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSizeBytes = 48 << 20;
+  imageCache.maximumSize = 400;
+
   // Barras del sistema transparentes con iconos claros.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

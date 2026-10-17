@@ -20,10 +20,9 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<MediaItem?>(
-      stream: services.player.currentItemStream,
-      builder: (context, snapshot) {
-        final item = snapshot.data;
+    return ValueListenableBuilder<MediaItem?>(
+      valueListenable: services.player.currentItem,
+      builder: (context, item, _) {
         return AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
@@ -118,17 +117,13 @@ class _MiniCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    StreamBuilder<bool>(
-                      stream: player.playingStream,
-                      initialData: false,
-                      builder: (context, snap) {
-                        final playing = snap.data ?? false;
-                        return GradientPlayButton(
-                          size: 44,
-                          playing: playing,
-                          onPressed: playing ? player.pause : player.play,
-                        );
-                      },
+                    ValueListenableBuilder<bool>(
+                      valueListenable: player.playing,
+                      builder: (context, playing, _) => GradientPlayButton(
+                        size: 44,
+                        playing: playing,
+                        onPressed: playing ? player.pause : player.play,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.skip_next_rounded),
@@ -150,6 +145,9 @@ class _MiniCard extends StatelessWidget {
   }
 }
 
+/// Barrita de progreso. Vive en su propia capa (RepaintBoundary) y usa una
+/// posición con frecuencia reducida: cada actualización repinta solo estos
+/// 3 px de alto, no la tarjeta con degradado y sombra.
 class _ProgressLine extends StatelessWidget {
   const _ProgressLine({required this.services});
 
@@ -158,27 +156,30 @@ class _ProgressLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final player = services.player;
-    return StreamBuilder<Duration?>(
-      stream: player.durationStream,
-      builder: (context, durationSnap) {
-        final total = durationSnap.data ?? Duration.zero;
-        return StreamBuilder<Duration>(
-          stream: player.positionStream,
-          builder: (context, positionSnap) {
-            final position = positionSnap.data ?? Duration.zero;
-            final value = total.inMilliseconds == 0
-                ? 0.0
-                : (position.inMilliseconds / total.inMilliseconds)
-                      .clamp(0.0, 1.0);
-            return LinearProgressIndicator(
-              value: value,
-              minHeight: 3,
-              backgroundColor: Colors.white12,
-              valueColor: const AlwaysStoppedAnimation(AppColors.accent),
-            );
-          },
-        );
-      },
+    return RepaintBoundary(
+      child: ValueListenableBuilder<Duration?>(
+        valueListenable: player.duration,
+        builder: (context, durationValue, _) {
+          final total = durationValue ?? Duration.zero;
+          return StreamBuilder<Duration>(
+            stream: player.miniPositionStream,
+            initialData: player.position,
+            builder: (context, positionSnap) {
+              final position = positionSnap.data ?? Duration.zero;
+              final value = total.inMilliseconds == 0
+                  ? 0.0
+                  : (position.inMilliseconds / total.inMilliseconds)
+                        .clamp(0.0, 1.0);
+              return LinearProgressIndicator(
+                value: value,
+                minHeight: 3,
+                backgroundColor: Colors.white12,
+                valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

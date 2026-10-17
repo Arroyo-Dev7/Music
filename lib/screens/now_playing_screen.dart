@@ -8,9 +8,11 @@ import 'package:just_audio_background/just_audio_background.dart'
 
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
+import '../utils/perf_flags.dart';
 import '../utils/song_colors.dart';
 import '../widgets/add_to_playlist_sheet.dart';
 import '../widgets/artwork.dart';
+import '../widgets/listenable_selector.dart';
 import '../widgets/playback_controls.dart';
 import '../widgets/seek_bar.dart';
 
@@ -25,10 +27,9 @@ class NowPlayingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: StreamBuilder<MediaItem?>(
-        stream: services.player.currentItemStream,
-        builder: (context, snapshot) {
-          final item = snapshot.data;
+      body: ValueListenableBuilder<MediaItem?>(
+        valueListenable: services.player.currentItem,
+        builder: (context, item, _) {
           if (item == null) return const _NothingPlaying();
           return _Body(item: item, services: services);
         },
@@ -124,11 +125,9 @@ class _Body extends StatelessWidget {
                           math.min(c.maxWidth, c.maxHeight) - 16,
                         );
                         return Center(
-                          child: StreamBuilder<bool>(
-                            stream: player.playingStream,
-                            initialData: false,
-                            builder: (context, snap) {
-                              final playing = snap.data ?? false;
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: player.playing,
+                            builder: (context, playing, _) {
                               return AnimatedScale(
                                 scale: playing ? 1 : 0.88,
                                 duration: const Duration(milliseconds: 350),
@@ -144,26 +143,30 @@ class _Body extends StatelessWidget {
                                       player.previous();
                                     }
                                   },
-                                  child: Container(
-                                    width: side,
-                                    height: side,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(28),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: colors[0]
-                                              .withValues(alpha: 0.55),
-                                          blurRadius: 50,
-                                          spreadRadius: -8,
-                                          offset: const Offset(0, 24),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Artwork.square(
-                                      id: songId,
-                                      size: side,
-                                      radius: 28,
-                                      pixelSize: 1000,
+                                  // Capa propia: la sombra grande y la imagen
+                                  // se rasterizan una vez y la animación de
+                                  // escala solo mueve esa capa.
+                                  child: RepaintBoundary(
+                                    child: Container(
+                                      width: side,
+                                      height: side,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(28),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: colors[0]
+                                                .withValues(alpha: 0.55),
+                                            blurRadius: 50,
+                                            spreadRadius: -8,
+                                            offset: const Offset(0, 24),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Artwork.square(
+                                        id: songId,
+                                        size: side,
+                                        radius: 28,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -200,11 +203,10 @@ class _Body extends StatelessWidget {
                           ],
                         ),
                       ),
-                      ListenableBuilder(
+                      ListenableSelector<bool>(
                         listenable: services.favorites,
-                        builder: (context, _) {
-                          final isFavorite =
-                              services.favorites.isFavorite(songId);
+                        selector: () => services.favorites.isFavorite(songId),
+                        builder: (context, isFavorite, _) {
                           return IconButton(
                             tooltip: isFavorite
                                 ? 'Quitar de favoritas'
@@ -252,6 +254,12 @@ class _Body extends StatelessWidget {
 }
 
 /// Fondo: la carátula muy difuminada sobre un degradado. Cambia con fundido.
+///
+/// Por defecto ([kRichAmbientBlur] = false) NO se desenfoca en la GPU: se pide
+/// una carátula de 64 px y se amplía con filtro bicúbico, que da un resultado
+/// muy parecido sin el coste de un blur sigma 50 a pantalla completa.
+/// Todo vive en una capa propia para que lo que se mueva encima (barra de
+/// progreso, botones) no obligue a recomponer el fondo.
 class _AmbientBackground extends StatelessWidget {
   const _AmbientBackground({required this.songId});
 
@@ -262,44 +270,54 @@ class _AmbientBackground extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final colors = ambientColors(songId);
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 600),
-      child: Stack(
-        key: ValueKey(songId),
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: colors,
+    return RepaintBoundary(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 600),
+        child: Stack(
+          key: ValueKey(songId),
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: colors,
+                ),
               ),
             ),
-          ),
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-            child: Artwork(
-              id: songId,
-              width: size.width,
-              height: size.height,
-              radius: 0,
-              pixelSize: 400,
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.25),
-                  AppColors.background.withValues(alpha: 0.93),
-                ],
+            if (kRichAmbientBlur)
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                child: Artwork(
+                  id: songId,
+                  width: size.width,
+                  height: size.height,
+                  radius: 0,
+                  pixelSize: 128,
+                  showPlaceholder: false,
+                ),
+              )
+            else
+              Artwork.ambient(
+                id: songId,
+                width: size.width,
+                height: size.height,
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.25),
+                    AppColors.background.withValues(alpha: 0.93),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -66,6 +66,7 @@ class FavoritesTab extends StatelessWidget {
                   itemBuilder: (context, i) => FadeSlideIn(
                     key: ValueKey(songs[i].id),
                     index: i,
+                    playOnceId: 'favorites:${songs[i].id}',
                     child: _FavoriteCard(
                       song: songs[i],
                       services: services,
@@ -75,9 +76,7 @@ class FavoritesTab extends StatelessWidget {
                 ),
               ),
             ],
-            SliverToBoxAdapter(
-              child: SizedBox(height: DockInset.of(context)),
-            ),
+            const SliverToBoxAdapter(child: DockSpacer()),
           ],
         );
       },
@@ -112,7 +111,6 @@ class _FavoriteCard extends StatelessWidget {
                 width: c.maxWidth,
                 height: c.maxHeight,
                 radius: 0,
-                pixelSize: 500,
               ),
             ),
             const DecoratedBox(

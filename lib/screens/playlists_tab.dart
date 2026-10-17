@@ -50,6 +50,7 @@ class PlaylistsTab extends StatelessWidget {
                   if (i == 0) {
                     return FadeSlideIn(
                       index: 0,
+                      playOnceId: 'playlists:new',
                       child: _NewPlaylistCard(
                         onTap: () async {
                           final name = await promptForName(
@@ -65,6 +66,7 @@ class PlaylistsTab extends StatelessWidget {
                   return FadeSlideIn(
                     key: ValueKey(playlist.id),
                     index: i,
+                    playOnceId: 'playlists:${playlist.id}',
                     child: _PlaylistCard(
                       playlist: playlist,
                       services: services,
@@ -73,9 +75,7 @@ class PlaylistsTab extends StatelessWidget {
                 },
               ),
             ),
-            SliverToBoxAdapter(
-              child: SizedBox(height: DockInset.of(context)),
-            ),
+            const SliverToBoxAdapter(child: DockSpacer()),
           ],
         );
       },

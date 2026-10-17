@@ -19,3 +19,14 @@ class DockInset extends InheritedWidget {
   @override
   bool updateShouldNotify(DockInset oldWidget) => bottom != oldWidget.bottom;
 }
+
+/// Espacio vacío del alto del dock. Es un widget aparte para que, mientras el
+/// dock se anima (aparece el mini reproductor), solo se reconstruya este
+/// espaciador y no toda la pestaña.
+class DockSpacer extends StatelessWidget {
+  const DockSpacer({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      SizedBox(height: DockInset.of(context));
+}

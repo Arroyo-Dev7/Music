@@ -39,7 +39,6 @@ class PlaylistMosaic extends StatelessWidget {
                     width: c.maxWidth,
                     height: c.maxHeight,
                     radius: 0,
-                    pixelSize: 500,
                   );
                 }
                 final w = c.maxWidth / 2;
@@ -49,7 +48,6 @@ class PlaylistMosaic extends StatelessWidget {
                       width: w,
                       height: h,
                       radius: 0,
-                      pixelSize: 250,
                     );
                 return Column(
                   children: [

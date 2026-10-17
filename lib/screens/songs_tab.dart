@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 
@@ -29,22 +31,59 @@ class SongsTab extends StatefulWidget {
 
 class _SongsTabState extends State<SongsTab> {
   final TextEditingController _controller = TextEditingController();
+  Timer? _debounce;
   String _query = '';
+  bool _hasText = false;
+
+  // Memoria del último filtrado: build() puede ejecutarse muchas veces
+  // (refresco, cambios de tema...) sin que cambie ni la lista ni la búsqueda.
+  List<SongModel>? _filteredFor;
+  String? _filteredQuery;
+  List<SongModel> _filteredResult = const [];
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void _onChanged(String value) {
+    final hasText = value.isNotEmpty;
+    if (hasText != _hasText) setState(() => _hasText = hasText);
+    // Espera a que el usuario deje de teclear: evita refiltrar y reconstruir
+    // la lista en cada letra.
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 180), () {
+      if (mounted) setState(() => _query = value);
+    });
+  }
+
+  void _clear() {
+    _debounce?.cancel();
+    _controller.clear();
+    setState(() {
+      _query = '';
+      _hasText = false;
+    });
+  }
+
   List<SongModel> get _filtered {
     final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return widget.songs;
-    return widget.songs.where((s) {
-      return s.title.toLowerCase().contains(q) ||
-          (s.artist ?? '').toLowerCase().contains(q) ||
-          (s.album ?? '').toLowerCase().contains(q);
-    }).toList();
+    if (identical(_filteredFor, widget.songs) && _filteredQuery == q) {
+      return _filteredResult;
+    }
+    final result = q.isEmpty
+        ? widget.songs
+        : widget.songs.where((s) {
+            return s.title.toLowerCase().contains(q) ||
+                (s.artist ?? '').toLowerCase().contains(q) ||
+                (s.album ?? '').toLowerCase().contains(q);
+          }).toList();
+    _filteredFor = widget.songs;
+    _filteredQuery = q;
+    _filteredResult = result;
+    return result;
   }
 
   @override
@@ -70,7 +109,7 @@ class _SongsTabState extends State<SongsTab> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: TextField(
                 controller: _controller,
-                onChanged: (value) => setState(() => _query = value),
+                onChanged: _onChanged,
                 textInputAction: TextInputAction.search,
                 style: const TextStyle(fontSize: 15),
                 decoration: InputDecoration(
@@ -80,15 +119,12 @@ class _SongsTabState extends State<SongsTab> {
                     Icons.search_rounded,
                     color: AppColors.textMuted,
                   ),
-                  suffixIcon: _query.isEmpty
-                      ? null
-                      : IconButton(
+                  suffixIcon: _hasText
+                      ? IconButton(
                           icon: const Icon(Icons.close_rounded),
-                          onPressed: () {
-                            _controller.clear();
-                            setState(() => _query = '');
-                          },
-                        ),
+                          onPressed: _clear,
+                        )
+                      : null,
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.07),
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -128,8 +164,8 @@ class _SongsTabState extends State<SongsTab> {
               ),
             )
           else
-            SliverSongList(songs: songs, services: services),
-          SliverToBoxAdapter(child: SizedBox(height: DockInset.of(context))),
+            SliverSongList(songs: songs, services: services, scope: 'songs'),
+          const SliverToBoxAdapter(child: DockSpacer()),
         ],
       ),
     );

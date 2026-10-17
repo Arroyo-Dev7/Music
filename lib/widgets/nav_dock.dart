@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
+import '../utils/perf_flags.dart';
 import 'dock_inset.dart';
 import 'mini_player.dart';
 
@@ -46,13 +47,14 @@ class NavDock extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(32),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: _Glass(
                 child: Container(
                   height: kNavBlockHeight - 12,
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.cardHigh.withValues(alpha: 0.72),
+                    color: AppColors.cardHigh.withValues(
+                      alpha: kGlassBlur ? 0.72 : 0.94,
+                    ),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -114,6 +116,24 @@ class NavDock extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Panel de vidrio. Con [kGlassBlur] desactivado no aplica desenfoque.
+/// OJO: no envolver en RepaintBoundary; BackdropFilter necesita ver lo que hay
+/// pintado detrás en la misma capa.
+class _Glass extends StatelessWidget {
+  const _Glass({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!kGlassBlur) return child;
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: kGlassSigma, sigmaY: kGlassSigma),
+      child: child,
     );
   }
 }

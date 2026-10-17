@@ -17,51 +17,39 @@ class PlaybackControls extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        StreamBuilder<bool>(
-          stream: player.shuffleStream,
-          initialData: false,
-          builder: (context, snap) {
-            final on = snap.data ?? false;
-            return _ToggleIcon(
-              icon: Icons.shuffle_rounded,
-              active: on,
-              tooltip: on ? 'Aleatorio: activado' : 'Aleatorio: desactivado',
-              onTap: player.toggleShuffle,
-            );
-          },
+        ValueListenableBuilder<bool>(
+          valueListenable: player.shuffleEnabled,
+          builder: (context, on, _) => _ToggleIcon(
+            icon: Icons.shuffle_rounded,
+            active: on,
+            tooltip: on ? 'Aleatorio: activado' : 'Aleatorio: desactivado',
+            onTap: player.toggleShuffle,
+          ),
         ),
         _SkipButton(icon: Icons.skip_previous_rounded, onTap: player.previous),
-        StreamBuilder<bool>(
-          stream: player.playingStream,
-          initialData: false,
-          builder: (context, snap) {
-            final playing = snap.data ?? false;
-            return GradientPlayButton(
-              size: 76,
-              playing: playing,
-              onPressed: playing ? player.pause : player.play,
-            );
-          },
+        ValueListenableBuilder<bool>(
+          valueListenable: player.playing,
+          builder: (context, playing, _) => GradientPlayButton(
+            size: 76,
+            playing: playing,
+            onPressed: playing ? player.pause : player.play,
+          ),
         ),
         _SkipButton(icon: Icons.skip_next_rounded, onTap: player.next),
-        StreamBuilder<RepeatMode>(
-          stream: player.repeatModeStream,
-          initialData: RepeatMode.off,
-          builder: (context, snap) {
-            final mode = snap.data ?? RepeatMode.off;
-            return _ToggleIcon(
-              icon: mode == RepeatMode.one
-                  ? Icons.repeat_one_rounded
-                  : Icons.repeat_rounded,
-              active: mode != RepeatMode.off,
-              tooltip: switch (mode) {
-                RepeatMode.off => 'Repetir: desactivado',
-                RepeatMode.all => 'Repetir todas',
-                RepeatMode.one => 'Repetir esta canción',
-              },
-              onTap: player.cycleRepeatMode,
-            );
-          },
+        ValueListenableBuilder<RepeatMode>(
+          valueListenable: player.repeatMode,
+          builder: (context, mode, _) => _ToggleIcon(
+            icon: mode == RepeatMode.one
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_rounded,
+            active: mode != RepeatMode.off,
+            tooltip: switch (mode) {
+              RepeatMode.off => 'Repetir: desactivado',
+              RepeatMode.all => 'Repetir todas',
+              RepeatMode.one => 'Repetir esta canción',
+            },
+            onTap: player.cycleRepeatMode,
+          ),
         ),
       ],
     );
