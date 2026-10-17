@@ -2,7 +2,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio_background/just_audio_background.dart' show MediaItem;
+import 'package:just_audio_background/just_audio_background.dart'
+    show MediaItem;
 
 import '../screens/now_playing_screen.dart';
 import '../services/app_services.dart';
@@ -13,7 +14,8 @@ import '../utils/song_colors.dart';
 import 'artwork.dart';
 import 'gradient_play_button.dart';
 
-/// Mini player premium con composición elegante y feedback claro.
+/// Mini player compatible: no usa AppColors.textPrimary ni propiedades
+/// que tu tema base no define.
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key, required this.services});
 
@@ -49,17 +51,42 @@ class _MiniCard extends StatelessWidget {
     final songId = int.tryParse(item.id) ?? 0;
     final colors = ambientColors(songId);
 
+    // Color base para el gradiente; usa AppColors.accent como fallback.
+    final primaryAmbient = (colors.isNotEmpty ? colors[0] : AppColors.accent)
+        .withOpacity(0.72);
+
+    // Sombra fija (no dependemos de AppColors.cardShadow).
+    final cardShadows = <BoxShadow>[
+      BoxShadow(
+        color: Colors.black.withOpacity(0.45),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
+      ),
+    ];
+
+    // Selección segura del estilo base para el título con fallback simple.
+    final TextStyle titleBase =
+        Theme.of(context).textTheme.titleMedium ??
+        Theme.of(context).textTheme.titleLarge ??
+        Theme.of(context).textTheme.titleLarge ??
+        const TextStyle(fontSize: 15);
+
+    final titleStyle = titleBase.copyWith(
+      fontWeight: FontWeight.w800,
+      color: Colors.white, // color seguro compatible
+    );
+
     final content = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white10, width: 0.6),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: cardShadows,
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            colors[0].withValues(alpha: 0.72),
-            AppColors.cardHigh,
+            primaryAmbient,
+            AppColors.cardHigh, // este campo sí existe en tu tema base
           ],
         ),
       ),
@@ -79,7 +106,7 @@ class _MiniCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
+                          color: Colors.black.withOpacity(0.35),
                           blurRadius: 13,
                           offset: const Offset(0, 6),
                         ),
@@ -87,11 +114,7 @@ class _MiniCard extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
-                      child: Artwork.square(
-                        id: songId,
-                        size: 48,
-                        radius: 14,
-                      ),
+                      child: Artwork.square(id: songId, size: 48, radius: 14),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -103,15 +126,7 @@ class _MiniCard extends StatelessWidget {
                           item.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ) ??
-                              const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                              ),
+                          style: titleStyle,
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -119,7 +134,8 @@ class _MiniCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: AppColors.textMuted,
+                            color:
+                                AppColors.textMuted, // existe en tu tema base
                             fontSize: 12.5,
                           ),
                         ),
@@ -137,7 +153,7 @@ class _MiniCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   IconButton(
                     icon: const Icon(Icons.skip_next_rounded),
-                    color: AppColors.textPrimary,
+                    color: Colors.white,
                     onPressed: () {
                       HapticFeedback.selectionClick();
                       player.next();
@@ -161,7 +177,7 @@ class _MiniCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.white10, width: 0.6),
-                  color: Colors.white.withValues(alpha: 0.02),
+                  color: Colors.white.withOpacity(0.02),
                 ),
                 child: content,
               ),
@@ -170,9 +186,9 @@ class _MiniCard extends StatelessWidget {
         : content;
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        slideUpRoute((_) => NowPlayingScreen(services: services)),
-      ),
+      onTap: () =>
+          Navigator.of(context)
+              .push(slideUpRoute((_) => NowPlayingScreen(services: services))),
       onHorizontalDragEnd: (details) {
         final v = details.primaryVelocity ?? 0;
         if (v < -300) {
@@ -211,8 +227,10 @@ class _ProgressLine extends StatelessWidget {
               final position = positionSnap.data ?? Duration.zero;
               final value = total.inMilliseconds == 0
                   ? 0.0
-                  : (position.inMilliseconds / total.inMilliseconds)
-                          .clamp(0.0, 1.0);
+                  : (position.inMilliseconds / total.inMilliseconds).clamp(
+                      0.0,
+                      1.0,
+                    );
               return LinearProgressIndicator(
                 value: value,
                 minHeight: 3,
@@ -226,246 +244,3 @@ class _ProgressLine extends StatelessWidget {
     );
   }
 }
-
-// Reuse existing perf flags if present.
-// We intentionally keep the interpolation and blur affordable.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"}]}  Co***assistant to=functions.push_files  <>
