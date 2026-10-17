@@ -1,3 +1,4 @@
+// Modified: lower concurrency to reduce spikes and minor comments
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
@@ -20,8 +21,11 @@ class ArtworkCache {
 
   static final ArtworkCache instance = ArtworkCache._();
 
+  // Presupuesto RAM para thumbnails en memoria. Ajusta si necesitas más o menos.
   static const int _maxBytes = 24 * 1024 * 1024;
-  static const int _maxConcurrent = 3;
+
+  // Reducido a 2 para evitar picos de trabajo simultáneo que puedan jankear.
+  static const int _maxConcurrent = 2;
   static final Uint8List _none = Uint8List(0);
 
   /// Tamaños que se piden al sistema. Pocos tamaños = más aciertos de caché.

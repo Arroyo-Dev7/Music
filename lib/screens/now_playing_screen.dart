@@ -1,3 +1,4 @@
+// Modified: _Body ahora es StatefulWidget y precachea el ambient artwork al cambiar canción.
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
@@ -61,16 +62,53 @@ class _NothingPlaying extends StatelessWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+/// _Body ahora es Stateful para detectar cambios de canción y precachear la
+/// artwork ambient antes de que el AnimatedSwitcher la muestre.
+class _Body extends StatefulWidget {
   const _Body({required this.item, required this.services});
 
   final MediaItem item;
   final AppServices services;
 
   @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  late final player = widget.services.player;
+  late int _songId;
+
+  @override
+  void initState() {
+    super.initState();
+    _songId = int.tryParse(widget.item.id) ?? -1;
+    // Precache after first frame to avoid using context too early.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _songId >= 0) {
+        Artwork.precacheAmbient(context, _songId);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _Body oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newId = int.tryParse(widget.item.id) ?? -1;
+    if (newId != _songId) {
+      _songId = newId;
+      // Precache la versión ambient de la nueva pista.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _songId >= 0) {
+          Artwork.precacheAmbient(context, _songId);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final player = services.player;
-    final songId = int.tryParse(item.id) ?? -1;
+    final item = widget.item;
+    final songId = _songId;
     final colors = ambientColors(songId);
 
     return GestureDetector(
@@ -112,8 +150,11 @@ class _Body extends StatelessWidget {
                       IconButton(
                         tooltip: 'Agregar a una lista',
                         icon: const Icon(Icons.playlist_add_rounded),
-                        onPressed: () =>
-                            showAddToPlaylistSheet(context, services, songId),
+                        onPressed: () => showAddToPlaylistSheet(
+                          context,
+                          widget.services,
+                          songId,
+                        ),
                       ),
                     ],
                   ),
@@ -154,8 +195,9 @@ class _Body extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(28),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: colors[0]
-                                                .withValues(alpha: 0.55),
+                                            color: colors[0].withValues(
+                                              alpha: 0.55,
+                                            ),
                                             blurRadius: 50,
                                             spreadRadius: -8,
                                             offset: const Offset(0, 24),
@@ -204,8 +246,9 @@ class _Body extends StatelessWidget {
                         ),
                       ),
                       ListenableSelector<bool>(
-                        listenable: services.favorites,
-                        selector: () => services.favorites.isFavorite(songId),
+                        listenable: widget.services.favorites,
+                        selector: () =>
+                            widget.services.favorites.isFavorite(songId),
                         builder: (context, isFavorite, _) {
                           return IconButton(
                             tooltip: isFavorite
@@ -213,7 +256,7 @@ class _Body extends StatelessWidget {
                                 : 'Marcar como favorita',
                             onPressed: () {
                               HapticFeedback.mediumImpact();
-                              services.favorites.toggle(songId);
+                              widget.services.favorites.toggle(songId);
                             },
                             icon: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 220),

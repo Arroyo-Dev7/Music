@@ -1,3 +1,4 @@
+// Slightly adjusted: unchanged logic but kept as isolated, RepaintBoundary preserved.
 import 'package:flutter/material.dart';
 
 import '../services/player_service.dart';

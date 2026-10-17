@@ -1,3 +1,4 @@
+// Modified: performance tweaks + precacheAmbient helper
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -31,20 +32,22 @@ class Artwork extends StatefulWidget {
     this.pixelSize,
     this.filterQuality = FilterQuality.low,
     this.showPlaceholder = true,
-  })  : width = size,
-        height = size;
+  }) : width = size,
+       height = size;
 
   /// Para fondos decorativos: imagen diminuta ampliada con filtro bicúbico
   /// (efecto "desenfoque barato"), sin icono ni marcador si no hay carátula.
+  /// Importante: ambient pide una imagen pequeña (pixelSize) y la escala, lo
+  /// cual evita la decodificación/blur en full-res.
   const Artwork.ambient({
     super.key,
     required this.id,
     required this.width,
     required this.height,
-  })  : radius = 0,
-        pixelSize = 64,
-        filterQuality = FilterQuality.high,
-        showPlaceholder = false;
+  }) : radius = 0,
+       pixelSize = 64,
+       filterQuality = FilterQuality.low,
+       showPlaceholder = false;
 
   final int id;
   final double width;
@@ -60,6 +63,24 @@ class Artwork extends StatefulWidget {
 
   @override
   State<Artwork> createState() => _ArtworkState();
+
+  /// Precarga la versión 'ambient' (pequeña) de la carátula para evitar que la
+  /// primera aparición decodifique en el hilo de UI. Useful before mostrar la pantalla.
+  static Future<void> precacheAmbient(
+    BuildContext context,
+    int id, {
+    int pixelSize = 64,
+  }) async {
+    try {
+      final bytes = await ArtworkCache.instance.load(id, pixelSize);
+      if (bytes.isNotEmpty) {
+        final provider = MemoryImage(bytes);
+        await precacheImage(provider, context);
+      }
+    } catch (_) {
+      // No bloquear si falla el prefetch.
+    }
+  }
 }
 
 class _ArtworkState extends State<Artwork> {
@@ -95,7 +116,8 @@ class _ArtworkState extends State<Artwork> {
 
   void _resolve() {
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final size = widget.pixelSize ??
+    final size =
+        widget.pixelSize ??
         ArtworkCache.bucketFor(math.max(widget.width, widget.height), dpr);
     if (size == _size && widget.id == _boundId) return;
 

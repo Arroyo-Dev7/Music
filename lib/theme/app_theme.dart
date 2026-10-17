@@ -19,14 +19,15 @@ class AppColors {
 }
 
 ThemeData buildAppTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: AppColors.accent,
-    brightness: Brightness.dark,
-  ).copyWith(
-    surface: AppColors.background,
-    primary: AppColors.accent,
-    secondary: AppColors.accentAlt,
-  );
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: AppColors.accent,
+        brightness: Brightness.dark,
+      ).copyWith(
+        surface: AppColors.background,
+        primary: AppColors.accent,
+        secondary: AppColors.accentAlt,
+      );
 
   final base = ThemeData(brightness: Brightness.dark).textTheme;
 
