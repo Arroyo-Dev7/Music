@@ -33,15 +33,17 @@ class SliverSongList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final indexById = <int, int>{
+      for (var i = 0; i < songs.length; i++) songs[i].id: i,
+    };
+
     return SliverPrototypeExtentList.builder(
       itemCount: songs.length,
       prototypeItem: const SongTilePrototype(),
       addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
       findChildIndexCallback: (key) {
-        if (key is ValueKey<int>) {
-          final i = songs.indexWhere((s) => s.id == key.value);
-          return i < 0 ? null : i;
-        }
+        if (key is ValueKey<int>) return indexById[key.value];
         return null;
       },
       itemBuilder: (context, i) {

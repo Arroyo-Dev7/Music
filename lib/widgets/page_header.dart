@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Encabezado editorial de cada pestaña: sobretítulo, título grande y subtítulo.
+/// Encabezado de sala: sobretítulo en itálica, título en serif y una raya de oro.
 class PageHeader extends StatelessWidget {
   const PageHeader({
     super.key,
@@ -19,38 +19,53 @@ class PageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.paddingOf(context).top + 24,
-        20,
-        18,
+        22,
+        MediaQuery.paddingOf(context).top + 22,
+        22,
+        16,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            overline.toUpperCase(),
+            overline,
             style: const TextStyle(
-              fontSize: 11.5,
-              letterSpacing: 2.4,
-              fontWeight: FontWeight.w700,
+              fontFamily: AppFonts.display,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              fontSize: 15,
               color: AppColors.accent,
+              height: 1,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 36,
-              height: 1.05,
-              letterSpacing: -1,
-              fontWeight: FontWeight.w800,
+              fontFamily: AppFonts.display,
+              fontWeight: FontWeight.w600,
+              fontSize: 42,
+              height: 0.98,
+              letterSpacing: -0.8,
+              color: AppColors.cream,
             ),
           ),
+          const SizedBox(height: 12),
+          Container(
+            width: 42,
+            height: 1.5,
+            color: AppColors.accent.withValues(alpha: 0.85),
+          ),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
               subtitle!,
-              style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+              style: const TextStyle(
+                fontFamily: AppFonts.body,
+                fontSize: 13.5,
+                letterSpacing: 0.2,
+                color: AppColors.textMuted,
+              ),
             ),
           ],
         ],

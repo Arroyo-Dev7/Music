@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import '../utils/perf_flags.dart';
+import '../utils/scroll_perf.dart';
 import 'dock_inset.dart';
 import 'mini_player.dart';
 
-/// Zona inferior flotante: mini reproductor + barra de navegación de vidrio.
-/// La pastilla de color se desliza siguiendo el gesto de las páginas.
+/// Mini reproductor + barra de sala. El indicador de oro sigue el gesto.
 class NavDock extends StatelessWidget {
   const NavDock({
     super.key,
@@ -20,19 +20,17 @@ class NavDock extends StatelessWidget {
   });
 
   final AppServices services;
-
-  /// Posición fraccionaria de la página (0.0, 0.4, 1.0, ...).
   final ValueListenable<double> position;
   final ValueChanged<int> onSelect;
 
   static const _items = [
-    _NavData('Canciones', Icons.music_note_outlined, Icons.music_note_rounded),
+    _NavData('Archivo', Icons.graphic_eq_rounded, Icons.graphic_eq_rounded),
     _NavData(
-      'Favoritas',
+      'Guardadas',
       Icons.favorite_border_rounded,
       Icons.favorite_rounded,
     ),
-    _NavData('Listas', Icons.queue_music_outlined, Icons.queue_music_rounded),
+    _NavData('Listas', Icons.library_music_outlined, Icons.library_music_rounded),
   ];
 
   @override
@@ -44,19 +42,19 @@ class NavDock extends StatelessWidget {
         children: [
           MiniPlayer(services: services),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(32),
+              borderRadius: BorderRadius.circular(22),
               child: _Glass(
                 child: Container(
                   height: kNavBlockHeight - 12,
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: AppColors.cardHigh.withValues(
-                      alpha: kGlassBlur ? 0.72 : 0.94,
+                      alpha: kGlassBlur ? 0.78 : 0.96,
                     ),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: Colors.white12),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: AppColors.hairline),
                   ),
                   child: LayoutBuilder(
                     builder: (context, c) {
@@ -72,19 +70,12 @@ class NavDock extends StatelessWidget {
                                 top: 0,
                                 bottom: 0,
                                 width: itemW,
-                                child: DecoratedBox(
+                                child: const DecoratedBox(
                                   decoration: BoxDecoration(
-                                    gradient: AppColors.accentGradient,
-                                    borderRadius: BorderRadius.circular(26),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.accent.withValues(
-                                          alpha: 0.35,
-                                        ),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
+                                    color: AppColors.accent,
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(16),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -120,9 +111,6 @@ class NavDock extends StatelessWidget {
   }
 }
 
-/// Panel de vidrio. Con [kGlassBlur] desactivado no aplica desenfoque.
-/// OJO: no envolver en RepaintBoundary; BackdropFilter necesita ver lo que hay
-/// pintado detrás en la misma capa.
 class _Glass extends StatelessWidget {
   const _Glass({required this.child});
 
@@ -131,9 +119,16 @@ class _Glass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!kGlassBlur) return child;
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: kGlassSigma, sigmaY: kGlassSigma),
+    return ValueListenableBuilder<bool>(
+      valueListenable: ScrollPerf.active,
       child: child,
+      builder: (context, scrolling, child) {
+        if (scrolling) return child!;
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: kGlassSigma, sigmaY: kGlassSigma),
+          child: child,
+        );
+      },
     );
   }
 }
@@ -154,14 +149,12 @@ class _NavItem extends StatelessWidget {
   });
 
   final _NavData data;
-
-  /// 1.0 = pestaña activa, 0.0 = lejos de ella.
   final double closeness;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = Color.lerp(AppColors.textMuted, Colors.white, closeness)!;
+    final color = Color.lerp(AppColors.textMuted, AppColors.ink, closeness)!;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -173,14 +166,16 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               closeness > 0.5 ? data.activeIcon : data.icon,
-              size: 22,
+              size: 20,
               color: color,
             ),
             const SizedBox(height: 2),
             Text(
               data.label,
               style: TextStyle(
-                fontSize: 11,
+                fontFamily: AppFonts.body,
+                fontSize: 10.5,
+                letterSpacing: 0.4,
                 fontWeight: FontWeight.w600,
                 color: color,
               ),

@@ -28,12 +28,15 @@ class FavoritesTab extends StatelessWidget {
         final songs = services.library.songsFor(services.favorites.ids);
 
         return CustomScrollView(
+          cacheExtent: 480,
           slivers: [
             SliverToBoxAdapter(
               child: PageHeader(
-                overline: 'Tu selección',
-                title: 'Favoritas',
-                subtitle: songs.isEmpty ? null : '${songs.length} canciones',
+                overline: 'Lo elegido',
+                title: 'Guardadas',
+                subtitle: songs.isEmpty
+                    ? null
+                    : '${songs.length} ${songs.length == 1 ? 'pieza' : 'piezas'}',
               ),
             ),
             if (songs.isEmpty)
@@ -41,9 +44,9 @@ class FavoritesTab extends StatelessWidget {
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: Icons.favorite_border_rounded,
-                  title: 'Aún no tienes favoritas',
+                  title: 'Todavía vacío',
                   subtitle:
-                      'Marca una canción con el corazón y aparecerá aquí.',
+                      'El corazón de una canción la trae a esta pared.',
                 ),
               )
             else ...[
@@ -97,21 +100,22 @@ class _FavoriteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final side = (MediaQuery.sizeOf(context).width - 46) / 2;
     return Pressable(
       onTap: onTap,
       scale: 0.96,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         child: Stack(
           fit: StackFit.expand,
           children: [
-            LayoutBuilder(
-              builder: (context, c) => Artwork(
-                id: song.id,
-                width: c.maxWidth,
-                height: c.maxHeight,
-                radius: 0,
-              ),
+            Artwork(
+              id: song.id,
+              width: side,
+              height: side,
+              radius: 0,
+              pixelSize: 256,
+              fadeIn: false,
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -136,10 +140,11 @@ class _FavoriteCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14.5,
-                      height: 1.2,
+                      fontFamily: AppFonts.display,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.cream,
+                      fontSize: 16,
+                      height: 1.15,
                     ),
                   ),
                   const SizedBox(height: 3),

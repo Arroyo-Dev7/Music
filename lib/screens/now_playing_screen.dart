@@ -55,7 +55,18 @@ class _NothingPlaying extends StatelessWidget {
               onPressed: () => Navigator.of(context).maybePop(),
             ),
           ),
-          const Expanded(child: Center(child: Text('No hay nada sonando.'))),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'La sala está en silencio.',
+                style: TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -137,12 +148,13 @@ class _BodyState extends State<_Body> {
                       const Expanded(
                         child: Center(
                           child: Text(
-                            'REPRODUCIENDO',
+                            'En sala',
                             style: TextStyle(
-                              fontSize: 11,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white70,
+                              fontFamily: AppFonts.display,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.accent,
                             ),
                           ),
                         ),
@@ -192,22 +204,22 @@ class _BodyState extends State<_Body> {
                                       width: side,
                                       height: side,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(18),
                                         boxShadow: [
                                           BoxShadow(
                                             color: colors[0].withValues(
-                                              alpha: 0.55,
+                                              alpha: 0.45,
                                             ),
-                                            blurRadius: 50,
-                                            spreadRadius: -8,
-                                            offset: const Offset(0, 24),
+                                            blurRadius: 40,
+                                            spreadRadius: -10,
+                                            offset: const Offset(0, 18),
                                           ),
                                         ],
                                       ),
                                       child: Artwork.square(
                                         id: songId,
                                         size: side,
-                                        radius: 28,
+                                        radius: 18,
                                       ),
                                     ),
                                   ),
@@ -230,16 +242,23 @@ class _BodyState extends State<_Body> {
                               item.title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.headlineSmall,
+                              style: const TextStyle(
+                                fontFamily: AppFonts.display,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 26,
+                                height: 1.12,
+                                color: AppColors.cream,
+                              ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               item.artist ?? 'Artista desconocido',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white70,
+                                fontFamily: AppFonts.body,
+                                fontSize: 15,
+                                color: AppColors.textMuted,
                               ),
                             ),
                           ],

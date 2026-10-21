@@ -5,6 +5,8 @@ import 'package:on_audio_query_forked/on_audio_query.dart';
 
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
+import '../utils/artwork_cache.dart';
+import '../utils/perf_flags.dart';
 import '../utils/playback_actions.dart';
 import '../widgets/dock_inset.dart';
 import '../widgets/empty_state.dart';
@@ -40,6 +42,28 @@ class _SongsTabState extends State<SongsTab> {
   List<SongModel>? _filteredFor;
   String? _filteredQuery;
   List<SongModel> _filteredResult = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _precacheVisible());
+  }
+
+  @override
+  void didUpdateWidget(SongsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.songs, widget.songs)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _precacheVisible());
+    }
+  }
+
+  void _precacheVisible() {
+    if (!mounted) return;
+    ArtworkCache.instance.prefetch(
+      widget.songs.take(36).map((s) => s.id),
+      kListArtworkPx,
+    );
+  }
 
   @override
   void dispose() {
@@ -95,26 +119,26 @@ class _SongsTabState extends State<SongsTab> {
       onRefresh: widget.onRefresh,
       edgeOffset: MediaQuery.paddingOf(context).top + 8,
       child: CustomScrollView(
+        cacheExtent: 720,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         slivers: [
           SliverToBoxAdapter(
             child: PageHeader(
-              overline: 'Biblioteca',
+              overline: 'Archivo sonoro',
               title: 'Tu música',
-              subtitle: '${widget.songs.length} canciones',
+              subtitle: '${widget.songs.length} piezas en el disco',
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: TextField(
                 controller: _controller,
                 onChanged: _onChanged,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 15),
+                style: const TextStyle(fontSize: 15, fontFamily: AppFonts.body),
                 decoration: InputDecoration(
-                  hintText: 'Buscar canciones, artistas o álbumes',
-                  hintStyle: const TextStyle(color: AppColors.textMuted),
+                  hintText: 'Busca título, voz o disco',
                   prefixIcon: const Icon(
                     Icons.search_rounded,
                     color: AppColors.textMuted,
@@ -125,23 +149,6 @@ class _SongsTabState extends State<SongsTab> {
                           onPressed: _clear,
                         )
                       : null,
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.07),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(
-                      color: AppColors.accent.withValues(alpha: 0.6),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -159,8 +166,8 @@ class _SongsTabState extends State<SongsTab> {
               hasScrollBody: false,
               child: EmptyState(
                 icon: Icons.search_off_rounded,
-                title: 'Sin resultados',
-                subtitle: 'Prueba con otro nombre o artista.',
+                title: 'Nada con ese nombre',
+                subtitle: 'Prueba con otra voz, un disco o solo unas letras.',
               ),
             )
           else

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 
-/// Botón circular de play/pausa con degradado y brillo.
+/// Play/pausa de oro macizo; el icono va en tinta para que se lea como un sello.
 class GradientPlayButton extends StatelessWidget {
   const GradientPlayButton({
     super.key,
@@ -26,10 +26,9 @@ class GradientPlayButton extends StatelessWidget {
         gradient: AppColors.accentGradient,
         boxShadow: [
           BoxShadow(
-            color: AppColors.accent.withValues(alpha: 0.45),
-            blurRadius: size * 0.4,
-            spreadRadius: -2,
-            offset: Offset(0, size * 0.12),
+            color: AppColors.accent.withValues(alpha: 0.28),
+            blurRadius: size * 0.28,
+            offset: Offset(0, size * 0.08),
           ),
         ],
       ),
@@ -44,14 +43,14 @@ class GradientPlayButton extends StatelessWidget {
           },
           child: Center(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, animation) =>
                   ScaleTransition(scale: animation, child: child),
               child: Icon(
                 playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                 key: ValueKey(playing),
-                size: size * 0.52,
-                color: Colors.white,
+                size: size * 0.48,
+                color: AppColors.ink,
               ),
             ),
           ),

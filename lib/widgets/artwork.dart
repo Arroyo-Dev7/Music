@@ -1,17 +1,18 @@
-// Modified: performance tweaks + precacheAmbient helper
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import '../utils/artwork_cache.dart';
+import '../utils/scroll_perf.dart';
 import '../utils/song_colors.dart';
 
 /// Carátula de una canción. Si no tiene, muestra un degradado único por canción.
 ///
 /// Usa [ArtworkCache]: si la imagen ya está en memoria aparece en el mismo
 /// fotograma (sin parpadeo al volver a hacer scroll); si no, se pide en
-/// segundo plano con un tamaño ajustado al widget y a la densidad de pantalla.
+/// segundo plano y, si hay scroll, se pinta al soltar el dedo para no cortar
+/// el deslizamiento.
 class Artwork extends StatefulWidget {
   const Artwork({
     super.key,
@@ -22,6 +23,7 @@ class Artwork extends StatefulWidget {
     this.pixelSize,
     this.filterQuality = FilterQuality.low,
     this.showPlaceholder = true,
+    this.fadeIn = true,
   });
 
   const Artwork.square({
@@ -32,13 +34,12 @@ class Artwork extends StatefulWidget {
     this.pixelSize,
     this.filterQuality = FilterQuality.low,
     this.showPlaceholder = true,
+    this.fadeIn = true,
   }) : width = size,
        height = size;
 
   /// Para fondos decorativos: imagen diminuta ampliada con filtro bicúbico
   /// (efecto "desenfoque barato"), sin icono ni marcador si no hay carátula.
-  /// Importante: ambient pide una imagen pequeña (pixelSize) y la escala, lo
-  /// cual evita la decodificación/blur en full-res.
   const Artwork.ambient({
     super.key,
     required this.id,
@@ -47,7 +48,8 @@ class Artwork extends StatefulWidget {
   }) : radius = 0,
        pixelSize = 64,
        filterQuality = FilterQuality.low,
-       showPlaceholder = false;
+       showPlaceholder = false,
+       fadeIn = false;
 
   final int id;
   final double width;
@@ -60,12 +62,13 @@ class Artwork extends StatefulWidget {
 
   final FilterQuality filterQuality;
   final bool showPlaceholder;
+  final bool fadeIn;
 
   @override
   State<Artwork> createState() => _ArtworkState();
 
   /// Precarga la versión 'ambient' (pequeña) de la carátula para evitar que la
-  /// primera aparición decodifique en el hilo de UI. Useful before mostrar la pantalla.
+  /// primera aparición decodifique en el hilo de UI.
   static Future<void> precacheAmbient(
     BuildContext context,
     int id, {
@@ -85,6 +88,7 @@ class Artwork extends StatefulWidget {
 
 class _ArtworkState extends State<Artwork> {
   Uint8List? _bytes; // null = aún cargando; vacío = sin carátula
+  MemoryImage? _provider;
   int _boundId = -1;
   int _size = 0;
   bool _waiting = false;
@@ -114,6 +118,11 @@ class _ArtworkState extends State<Artwork> {
     }
   }
 
+  void _applyBytes(Uint8List bytes) {
+    _bytes = bytes;
+    _provider = bytes.isEmpty ? null : MemoryImage(bytes);
+  }
+
   void _resolve() {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final size =
@@ -128,18 +137,26 @@ class _ArtworkState extends State<Artwork> {
 
     final hit = ArtworkCache.instance.peek(id, size);
     if (hit != null) {
-      _bytes = hit;
+      _applyBytes(hit);
       return;
     }
 
     _bytes = null;
+    _provider = null;
     _waiting = true;
     ArtworkCache.instance.load(id, size).then((bytes) {
       if (!mounted || _boundId != id || _size != size) return;
-      setState(() {
-        _bytes = bytes;
-        _waiting = false;
-      });
+      void apply() {
+        if (!mounted || _boundId != id || _size != size) return;
+        setState(() {
+          _applyBytes(bytes);
+          _waiting = false;
+        });
+      }
+
+      // Las que ya estaban en caché se pintan al instante; las nuevas esperan
+      // a que el dedo deje de deslizar para no competir con el scroll.
+      ScrollPerf.runWhenIdle(apply);
     });
   }
 
@@ -166,35 +183,40 @@ class _ArtworkState extends State<Artwork> {
   @override
   Widget build(BuildContext context) {
     final w = widget;
+    final provider = _provider;
     final bytes = _bytes;
 
     final Widget content;
-    if (bytes != null && bytes.isNotEmpty) {
-      content = Image.memory(
-        bytes,
+    if (provider != null) {
+      content = Image(
+        image: provider,
         width: w.width,
         height: w.height,
         fit: BoxFit.cover,
         gaplessPlayback: true,
         filterQuality: w.filterQuality,
+        isAntiAlias: false,
         excludeFromSemantics: true,
-        frameBuilder: (context, image, frame, wasSynchronouslyLoaded) {
-          // Ya decodificada en el ImageCache: sin animación ni marcador.
-          if (wasSynchronouslyLoaded || !w.showPlaceholder) return image;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              _placeholder(),
-              AnimatedOpacity(
-                opacity: frame == null ? 0 : 1,
-                duration: const Duration(milliseconds: 180),
-                child: image,
-              ),
-            ],
-          );
-        },
+        frameBuilder: w.fadeIn
+            ? (context, image, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return image;
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _placeholder(),
+                    AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 180),
+                      child: image,
+                    ),
+                  ],
+                );
+              }
+            : null,
         errorBuilder: (context, error, stack) => _placeholder(),
       );
+    } else if (bytes != null && bytes.isEmpty) {
+      content = _placeholder();
     } else {
       content = _placeholder();
     }
@@ -204,6 +226,7 @@ class _ArtworkState extends State<Artwork> {
       child: w.radius > 0
           ? ClipRRect(
               borderRadius: BorderRadius.circular(w.radius),
+              clipBehavior: Clip.hardEdge,
               child: sized,
             )
           : sized,

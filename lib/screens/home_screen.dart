@@ -91,19 +91,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           LibraryStatus.loading => const SkeletonList(),
           LibraryStatus.denied => MessageView(
             icon: Icons.lock_outline_rounded,
-            text: 'Necesito permiso para leer tu música.',
+            text: 'Para abrir tu archivo, necesito permiso de audio.',
             buttonLabel: 'Dar permiso',
             onPressed: _loadLibrary,
           ),
           LibraryStatus.permanentlyDenied => MessageView(
             icon: Icons.settings_outlined,
-            text: 'El permiso fue denegado. Actívalo desde los ajustes.',
+            text: 'El permiso quedó cerrado. Ábrelo en los ajustes del sistema.',
             buttonLabel: 'Abrir ajustes',
             onPressed: openAppSettings,
           ),
           LibraryStatus.empty => MessageView(
             icon: Icons.music_off_outlined,
-            text: 'No encontré canciones en este dispositivo.',
+            text: 'No hay piezas en este teléfono todavía.',
             buttonLabel: 'Volver a escanear',
             onPressed: _loadLibrary,
           ),

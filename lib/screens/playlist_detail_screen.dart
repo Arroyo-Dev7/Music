@@ -100,6 +100,7 @@ class PlaylistDetailScreen extends StatelessWidget {
           ),
           bottomNavigationBar: SafeArea(child: MiniPlayer(services: services)),
           body: CustomScrollView(
+            cacheExtent: 720,
             slivers: [
               SliverToBoxAdapter(
                 child: Column(
@@ -118,7 +119,13 @@ class PlaylistDetailScreen extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 32,
+                          height: 1.1,
+                          color: AppColors.cream,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -130,8 +137,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                     if (songs.isNotEmpty)
                       PlayActionsRow(
                         onPlay: () => playSongs(context, services, songs, 0),
-                        onShuffle: () =>
-                            shuffleSongs(context, services, songs),
+                        onShuffle: () => shuffleSongs(context, services, songs),
                       ),
                     const SizedBox(height: 14),
                   ],
@@ -142,9 +148,8 @@ class PlaylistDetailScreen extends StatelessWidget {
                   hasScrollBody: false,
                   child: EmptyState(
                     icon: Icons.queue_music_rounded,
-                    title: 'Esta lista está vacía',
-                    subtitle:
-                        'Agrega canciones desde el menú (⋮) de cualquier canción.',
+                    title: 'Esta lista espera',
+                    subtitle: 'Desde el menú de una canción puedes traerla aquí.',
                   ),
                 )
               else

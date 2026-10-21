@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Par de colores único por canción: se usa en fondos y carátulas vacías.
+/// Paleta nocturna acotada: ámbar, terracota, vino y teal apagado.
+/// Cada canción elige un par, pero todo sigue oliendo a la misma sala.
 List<Color> ambientColors(int id) {
-  final hue = (id * 47) % 360;
+  const hues = [32.0, 18.0, 8.0, 350.0, 28.0, 195.0];
+  final hue = hues[id.abs() % hues.length];
+  final shift = (id.abs() % 11) * 1.4;
   return [
-    HSLColor.fromAHSL(1, hue.toDouble(), 0.55, 0.38).toColor(),
-    HSLColor.fromAHSL(1, ((hue + 40) % 360).toDouble(), 0.6, 0.20).toColor(),
+    HSLColor.fromAHSL(1, (hue + shift) % 360, 0.38, 0.30).toColor(),
+    HSLColor.fromAHSL(1, (hue + 18 + shift) % 360, 0.32, 0.14).toColor(),
   ];
 }

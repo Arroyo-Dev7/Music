@@ -30,10 +30,10 @@ class PlaylistsTab extends StatelessWidget {
             SliverToBoxAdapter(
               child: PageHeader(
                 overline: 'Colección',
-                title: 'Tus listas',
+                title: 'Listas',
                 subtitle: playlists.isEmpty
-                    ? 'Organiza tu música como quieras'
-                    : '${playlists.length} listas',
+                    ? 'Arma tus propios programas'
+                    : '${playlists.length} ${playlists.length == 1 ? 'lista' : 'listas'}',
               ),
             ),
             SliverPadding(
@@ -95,37 +95,23 @@ class _NewPlaylistCard extends StatelessWidget {
       scale: 0.96,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.accent.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppColors.accentGradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.4),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
+            Icon(Icons.add_rounded, color: AppColors.accent, size: 32),
+            SizedBox(height: 12),
+            Text(
               'Nueva lista',
-              style: TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                color: AppColors.cream,
+              ),
             ),
           ],
         ),
@@ -163,7 +149,12 @@ class _PlaylistCard extends StatelessWidget {
             playlist.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            style: const TextStyle(
+              fontFamily: AppFonts.display,
+              fontWeight: FontWeight.w600,
+              fontSize: 17,
+              color: AppColors.cream,
+            ),
           ),
           const SizedBox(height: 2),
           Text(

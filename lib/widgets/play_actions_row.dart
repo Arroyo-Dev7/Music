@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Par de botones grandes: "Reproducir" y "Aleatorio".
+/// Par de acciones: un botón de oro y otro en contorno, sin pastillas genéricas.
 class PlayActionsRow extends StatelessWidget {
   const PlayActionsRow({
     super.key,
@@ -17,21 +17,23 @@ class PlayActionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
-            child: _Pill(
-              label: 'Reproducir',
+            flex: 6,
+            child: _Action(
+              label: 'Escuchar',
               icon: Icons.play_arrow_rounded,
               filled: true,
               onTap: onPlay,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
-            child: _Pill(
-              label: 'Aleatorio',
+            flex: 5,
+            child: _Action(
+              label: 'Mezclar',
               icon: Icons.shuffle_rounded,
               filled: false,
               onTap: onShuffle,
@@ -43,8 +45,8 @@ class PlayActionsRow extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({
+class _Action extends StatelessWidget {
+  const _Action({
     required this.label,
     required this.icon,
     required this.filled,
@@ -58,37 +60,30 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fg = filled ? AppColors.ink : AppColors.cream;
     return Pressable(
       onTap: onTap,
-      scale: 0.96,
+      scale: 0.97,
       child: Container(
-        height: 52,
+        height: 48,
         decoration: BoxDecoration(
-          gradient: filled ? AppColors.accentGradient : null,
-          color: filled ? null : Colors.white.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(26),
-          border: filled ? null : Border.all(color: Colors.white12),
-          boxShadow: filled
-              ? [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
+          color: filled ? AppColors.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: filled ? null : Border.all(color: AppColors.hairline),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 8),
+            Icon(icon, color: fg, size: 22),
+            const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
+              style: TextStyle(
+                fontFamily: AppFonts.body,
+                color: fg,
+                fontWeight: FontWeight.w600,
+                fontSize: 14.5,
+                letterSpacing: 0.1,
               ),
             ),
           ],

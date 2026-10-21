@@ -46,7 +46,10 @@ class _NameDialogState extends State<_NameDialog> {
         controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(labelText: 'Nombre'),
+        decoration: const InputDecoration(
+          labelText: 'Nombre',
+          labelStyle: TextStyle(color: Color(0xFF9A9088)),
+        ),
         onSubmitted: (_) => _submit(),
       ),
       actions: [

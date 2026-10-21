@@ -38,10 +38,9 @@ class _PressableState extends State<Pressable> {
         if (widget.haptic) HapticFeedback.selectionClick();
         widget.onTap();
       },
-      child: AnimatedScale(
+      child: Transform.scale(
         scale: _down ? widget.scale : 1,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
+        filterQuality: FilterQuality.low,
         child: widget.child,
       ),
     );

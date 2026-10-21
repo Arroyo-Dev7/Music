@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/player_service.dart';
+import '../theme/app_theme.dart';
 
 /// Barra para ver y mover la posición de la canción, con los tiempos.
 ///
@@ -20,7 +21,8 @@ class _SeekBarState extends State<SeekBar> {
   double? _dragMs; // valor mientras el usuario arrastra
 
   static const _timeStyle = TextStyle(
-    color: Colors.white60,
+    fontFamily: AppFonts.body,
+    color: AppColors.textMuted,
     fontSize: 12,
     fontFeatures: [FontFeature.tabularFigures()],
   );

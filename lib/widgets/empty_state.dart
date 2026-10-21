@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Estado vacío / mensaje: icono con degradado, título, texto y botón opcional.
+/// Vacío con voz de sala: serif, raya de oro y un icono contenido.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -23,40 +23,34 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accent.withValues(alpha: 0.12),
-                border: Border.all(
-                  color: AppColors.accent.withValues(alpha: 0.35),
-                ),
-              ),
-              child: ShaderMask(
-                shaderCallback: (rect) =>
-                    AppColors.accentGradient.createShader(rect),
-                child: Icon(icon, size: 44, color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 20),
+            Icon(icon, size: 36, color: AppColors.accent),
+            const SizedBox(height: 18),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: const TextStyle(
+                fontFamily: AppFonts.display,
+                fontWeight: FontWeight.w600,
+                fontSize: 26,
+                height: 1.15,
+                color: AppColors.cream,
+              ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textMuted),
+                style: const TextStyle(
+                  fontFamily: AppFonts.body,
+                  color: AppColors.textMuted,
+                  height: 1.45,
+                  fontSize: 14.5,
+                ),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[

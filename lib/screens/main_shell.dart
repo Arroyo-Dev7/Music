@@ -154,7 +154,7 @@ final BoxDecoration _fadeDecoration = BoxDecoration(
     end: Alignment.bottomCenter,
     colors: [
       AppColors.background.withValues(alpha: 0),
-      AppColors.background.withValues(alpha: 0.92),
+      AppColors.background.withValues(alpha: 0.94),
     ],
   ),
 );
@@ -219,7 +219,7 @@ class _AmbientBackdrop extends StatelessWidget {
       valueListenable: services.player.currentSongId,
       builder: (context, id, _) {
         final color = id == null ? AppColors.accent : ambientColors(id)[0];
-        final alpha = id == null ? 0.2 : 0.4;
+        final alpha = id == null ? 0.16 : 0.32;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 900),

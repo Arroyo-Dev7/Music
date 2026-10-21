@@ -29,7 +29,7 @@ class FadeSlideIn extends StatefulWidget {
 
 class _FadeSlideInState extends State<FadeSlideIn>
     with SingleTickerProviderStateMixin {
-  static const int _maxAnimatedIndex = 8;
+  static const int _maxAnimatedIndex = 5;
   static final Set<String> _played = <String>{};
 
   AnimationController? _controller;
@@ -64,14 +64,7 @@ class _FadeSlideInState extends State<FadeSlideIn>
     if (curve == null) return widget.child;
     return FadeTransition(
       opacity: curve,
-      child: AnimatedBuilder(
-        animation: curve,
-        child: widget.child,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, (1 - curve.value) * 28),
-          child: child,
-        ),
-      ),
+      child: widget.child,
     );
   }
 }

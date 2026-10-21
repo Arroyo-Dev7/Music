@@ -24,7 +24,6 @@ class ArtworkCache {
   // Presupuesto RAM para thumbnails en memoria. Ajusta si necesitas más o menos.
   static const int _maxBytes = 24 * 1024 * 1024;
 
-  // Reducido a 2 para evitar picos de trabajo simultáneo que puedan jankear.
   static const int _maxConcurrent = 2;
   static final Uint8List _none = Uint8List(0);
 
@@ -59,6 +58,14 @@ class ArtworkCache {
     if (value == null) return null;
     _cache[key] = value; // pasa a ser el más reciente
     return value;
+  }
+
+  /// Calienta la caché en segundo plano. Las peticiones se encolan en orden
+  /// (la primera del iterable sale primero) y no hace falta [release].
+  void prefetch(Iterable<int> ids, int size) {
+    for (final id in ids.toList().reversed) {
+      unawaited(load(id, size));
+    }
   }
 
   /// Pide la carátula. Cada llamada a [load] debe equilibrarse con [release]
@@ -123,7 +130,7 @@ class ArtworkCache {
         ArtworkType.AUDIO,
         format: ArtworkFormat.JPEG,
         size: job.size,
-        quality: job.size >= 384 ? 85 : 75,
+        quality: job.size >= 384 ? 85 : (job.size <= 128 ? 70 : 75),
       );
       if (bytes != null && bytes.isNotEmpty) result = bytes;
     } catch (e) {

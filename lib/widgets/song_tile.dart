@@ -4,6 +4,7 @@ import 'package:on_audio_query_forked/on_audio_query.dart';
 
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
+import '../utils/perf_flags.dart';
 import '../utils/song_extensions.dart';
 import 'add_to_playlist_sheet.dart';
 import 'artwork.dart';
@@ -14,22 +15,35 @@ import 'pressable.dart';
 enum _SongAction { favorite, addToPlaylist, remove }
 
 const _kTitleStyle = TextStyle(
+  fontFamily: AppFonts.body,
   fontSize: 15.5,
   fontWeight: FontWeight.w600,
-  letterSpacing: -0.1,
+  letterSpacing: -0.15,
+  color: AppColors.cream,
 );
-const _kArtistStyle = TextStyle(fontSize: 13, color: AppColors.textMuted);
+const _kTitleCurrentStyle = TextStyle(
+  fontFamily: AppFonts.body,
+  fontSize: 15.5,
+  fontWeight: FontWeight.w600,
+  letterSpacing: -0.15,
+  color: AppColors.accent,
+);
+const _kArtistStyle = TextStyle(
+  fontFamily: AppFonts.body,
+  fontSize: 12.5,
+  color: AppColors.textMuted,
+);
 const _kDurationStyle = TextStyle(
+  fontFamily: AppFonts.body,
   fontSize: 12,
   color: AppColors.textMuted,
   fontFeatures: [FontFeature.tabularFigures()],
 );
-const _kTilePadding = EdgeInsets.fromLTRB(10, 10, 2, 10);
-const _kTileMargin = EdgeInsets.symmetric(horizontal: 16, vertical: 4);
+const _kTilePadding = EdgeInsets.fromLTRB(0, 9, 0, 9);
+const _kTileMargin = EdgeInsets.fromLTRB(20, 0, 8, 0);
 
-/// Fila interior de la tarjeta. La comparten [SongTile] y [SongTilePrototype]
-/// para que ambos midan exactamente lo mismo (incluso con texto grande).
 Widget _tileRow({
+  required Widget marker,
   required Widget cover,
   required Widget title,
   required Widget artist,
@@ -38,6 +52,8 @@ Widget _tileRow({
 }) {
   return Row(
     children: [
+      marker,
+      const SizedBox(width: 12),
       cover,
       const SizedBox(width: 14),
       Expanded(
@@ -54,11 +70,7 @@ Widget _tileRow({
   );
 }
 
-/// Tarjeta de canción. La que está sonando se resalta con barras animadas.
-///
-/// Rendimiento: ya no abre un StreamBuilder por tile. Escucha el notificador
-/// central del reproductor mediante [ListenableSelector], que solo reconstruye
-/// el tile cuando cambia su propio "¿soy la que suena?".
+/// Fila de archivo: sin tarjeta. La que suena se marca con una raya de oro.
 class SongTile extends StatelessWidget {
   const SongTile({
     super.key,
@@ -71,58 +83,52 @@ class SongTile extends StatelessWidget {
   final SongModel song;
   final AppServices services;
   final VoidCallback onTap;
-
-  /// Si se pasa, el menú muestra "Quitar de esta lista".
   final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
     final currentId = services.player.currentSongId;
 
-    return Padding(
-      padding: _kTileMargin,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.hairline, width: 0.6)),
+      ),
       child: Pressable(
         onTap: onTap,
-        scale: 0.98,
+        scale: 0.99,
         child: ListenableSelector<bool>(
           listenable: currentId,
           selector: () => currentId.value == song.id,
-          builder: (context, isCurrent, _) => AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            padding: _kTilePadding,
-            decoration: BoxDecoration(
-              color: isCurrent
-                  ? AppColors.accent.withValues(alpha: 0.16)
-                  : Colors.white.withValues(alpha: 0.045),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isCurrent
-                    ? AppColors.accent.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-            child: _tileRow(
-              cover: _Cover(song: song, isCurrent: isCurrent, services: services),
-              title: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 300),
-                style: _kTitleStyle.copyWith(
-                  color: isCurrent ? AppColors.accent : Colors.white,
+          builder: (context, isCurrent, _) => Padding(
+            padding: _kTileMargin,
+            child: Padding(
+              padding: _kTilePadding,
+              child: _tileRow(
+                marker: _Marker(active: isCurrent),
+                cover: _Cover(
+                  song: song,
+                  isCurrent: isCurrent,
+                  services: services,
                 ),
-                child: Text(
+                title: Text(
                   song.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: isCurrent ? _kTitleCurrentStyle : _kTitleStyle,
+                ),
+                artist: Text(
+                  song.artistName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _kArtistStyle,
+                ),
+                duration: Text(song.durationLabel, style: _kDurationStyle),
+                menu: _Menu(
+                  song: song,
+                  services: services,
+                  onRemove: onRemove,
                 ),
               ),
-              artist: Text(
-                song.artistName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _kArtistStyle,
-              ),
-              duration: Text(song.durationLabel, style: _kDurationStyle),
-              menu: _Menu(song: song, services: services, onRemove: onRemove),
             ),
           ),
         ),
@@ -131,31 +137,50 @@ class SongTile extends StatelessWidget {
   }
 }
 
-/// Molde sin datos con la misma estructura que [SongTile]. Lo usa la lista
-/// (SliverPrototypeExtentList) para conocer el alto de todas las filas sin
-/// medirlas una a una.
 class SongTilePrototype extends StatelessWidget {
   const SongTilePrototype({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: _kTileMargin,
-      child: Container(
-        padding: _kTilePadding,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.transparent),
-        ),
-        child: _tileRow(
-          cover: const SizedBox.square(dimension: 56),
-          title: const DefaultTextStyle(
-            style: _kTitleStyle,
-            child: Text('Ag', maxLines: 1),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.transparent, width: 0.6)),
+      ),
+      child: Padding(
+        padding: _kTileMargin,
+        child: Padding(
+          padding: _kTilePadding,
+          child: _tileRow(
+            marker: const _Marker(active: false),
+            cover: const SizedBox.square(dimension: 52),
+            title: const DefaultTextStyle(
+              style: _kTitleStyle,
+              child: Text('Ag', maxLines: 1),
+            ),
+            artist: const Text('Ag', maxLines: 1, style: _kArtistStyle),
+            duration: const Text('0:00', style: _kDurationStyle),
+            menu: const SizedBox(width: 48, height: 48),
           ),
-          artist: const Text('Ag', maxLines: 1, style: _kArtistStyle),
-          duration: const Text('0:00', style: _kDurationStyle),
-          menu: const SizedBox(width: 48, height: 48),
+        ),
+      ),
+    );
+  }
+}
+
+class _Marker extends StatelessWidget {
+  const _Marker({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 2,
+      height: 40,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: active ? AppColors.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(1),
         ),
       ),
     );
@@ -175,28 +200,31 @@ class _Cover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final art = Artwork.square(
+      id: song.id,
+      size: 52,
+      radius: 10,
+      pixelSize: kListArtworkPx,
+      fadeIn: false,
+    );
+
+    if (!isCurrent) return art;
+
     return Stack(
       children: [
-        Artwork.square(id: song.id, size: 56, radius: 14),
+        art,
         Positioned.fill(
           child: IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: isCurrent ? 1 : 0,
-              duration: const Duration(milliseconds: 250),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  // Solo la tile actual se suscribe a "reproduciendo".
-                  child: isCurrent
-                      ? ValueListenableBuilder<bool>(
-                          valueListenable: services.player.playing,
-                          builder: (context, playing, _) =>
-                              EqualizerBars(animate: playing, size: 22),
-                        )
-                      : const SizedBox.shrink(),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0x990B0908),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: services.player.playing,
+                  builder: (context, playing, _) =>
+                      EqualizerBars(animate: playing, size: 18),
                 ),
               ),
             ),
@@ -227,25 +255,18 @@ class _Menu extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: isFavorite
-                  ? const Padding(
-                      key: ValueKey('fav'),
-                      padding: EdgeInsets.only(left: 4),
-                      child: Icon(
-                        Icons.favorite_rounded,
-                        size: 18,
-                        color: AppColors.accentAlt,
-                      ),
-                    )
-                  : const SizedBox(key: ValueKey('nofav')),
-            ),
+            if (isFavorite)
+              const Padding(
+                padding: EdgeInsets.only(left: 2),
+                child: Icon(
+                  Icons.favorite_rounded,
+                  size: 15,
+                  color: AppColors.accentAlt,
+                ),
+              ),
             PopupMenuButton<_SongAction>(
               icon: const Icon(
-                Icons.more_vert_rounded,
+                Icons.more_horiz_rounded,
                 color: AppColors.textMuted,
               ),
               onSelected: (action) {
@@ -267,15 +288,15 @@ class _Menu extends StatelessWidget {
                         ? Icons.favorite_rounded
                         : Icons.favorite_border_rounded,
                     label: isFavorite
-                        ? 'Quitar de favoritas'
-                        : 'Marcar como favorita',
+                        ? 'Quitar de guardadas'
+                        : 'Guardar',
                   ),
                 ),
                 const PopupMenuItem(
                   value: _SongAction.addToPlaylist,
                   child: _MenuRow(
                     icon: Icons.playlist_add_rounded,
-                    label: 'Agregar a una lista',
+                    label: 'Añadir a una lista',
                   ),
                 ),
                 if (onRemove != null)

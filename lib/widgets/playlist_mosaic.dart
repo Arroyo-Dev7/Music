@@ -7,7 +7,7 @@ import 'artwork.dart';
 /// Portada de una lista: mosaico 2x2 con las carátulas de sus canciones.
 /// Con menos de 4 canciones muestra la carátula de la primera.
 class PlaylistMosaic extends StatelessWidget {
-  const PlaylistMosaic({super.key, required this.songs, this.radius = 24});
+  const PlaylistMosaic({super.key, required this.songs, this.radius = 16});
 
   final List<SongModel> songs;
   final double radius;
@@ -39,6 +39,8 @@ class PlaylistMosaic extends StatelessWidget {
                     width: c.maxWidth,
                     height: c.maxHeight,
                     radius: 0,
+                    pixelSize: 256,
+                    fadeIn: false,
                   );
                 }
                 final w = c.maxWidth / 2;
@@ -48,6 +50,8 @@ class PlaylistMosaic extends StatelessWidget {
                       width: w,
                       height: h,
                       radius: 0,
+                      pixelSize: 192,
+                      fadeIn: false,
                     );
                 return Column(
                   children: [
